@@ -4,7 +4,7 @@
 __auther__ = 'hea1er'
 
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from bs4 import BeautifulSoup
 import re
 
@@ -15,7 +15,7 @@ headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KH
 def URLCrawler(searchURL):
     try:
         request = Request(searchURL, headers = headers)
-        response = urlopen(request)
+        response = urlopen(request, timeout = 5)
         bsObj = BeautifulSoup(response, 'lxml')
         
         for h3 in bsObj.findAll('h3'):
@@ -24,8 +24,11 @@ def URLCrawler(searchURL):
                 for link in links:
                     if 'href' in link.attrs:
                         findlink = getRealURL(link.attrs['href'])
-                        print(findlink)
-                        writeFile(findlink)
+                        if 'gov' in findlink or findlink == '':
+                            print('The government or None')
+                        else:
+                            print(findlink)
+                            writeFile(findlink)
             except AttributeError as e:
                 print(e)
             else:
@@ -37,10 +40,13 @@ def URLCrawler(searchURL):
 def getRealURL(findlink):
     try:
         request = Request(findlink, headers = headers)
-        response = urlopen(request)
-        return response.geturl()
+        try:
+            response = urlopen(request, timeout = 5)
+            return response.geturl()
+        except Exception as e:
+            return ''
     except HTTPError as e:
-        return None
+        return ''
 
 def writeFile(findlink):
     with open('url.txt', 'a') as f:
